@@ -1,7 +1,7 @@
 {
-  "name": "legitodds",
-  "version": "2.1.0",
-  "description": "LegitOdds - Trusted Odds Store with Accounts & Cart",
+  "name": "zedicius-qurufixed-tips",
+  "version": "3.0.0",
+  "description": "Zedicius QuruFixed Tips - Premium Odds Store",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "express": "^4.21.0",
-    "ws": "^8.18.0",
     "node-telegram-bot-api": "^0.66.0",
     "better-sqlite3": "^11.10.0",
     "bcrypt": "^5.1.1",
