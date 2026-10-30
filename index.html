@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LegitOdds – Trusted Odds Store</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--card-h:#1c2333;--accent:#00d68f;--accent-d:#00b377;--text:#e6edf3;--muted:#8b949e;--danger:#f85149;--warn:#d29922;--border:#30363d;--r:16px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+header{background:linear-gradient(135deg,#0d1117,#1a2332);border-bottom:2px solid var(--accent);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+header h1{font-size:1.5rem;font-weight:800;background:linear-gradient(90deg,var(--accent),#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-actions{display:flex;gap:10px;align-items:center}
+.hdr-btn{background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 16px;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s}
+.hdr-btn:hover{border-color:var(--accent);color:var(--accent)}
+.hdr-btn.cart-btn{position:relative}
+.cart-badge{position:absolute;top:-6px;right:-6px;background:var(--accent);color:#000;font-size:.7rem;font-weight:800;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 60px}
+.page{display:none}.page.active{display:block}
+
+/* Auth */
+.auth-box{max-width:400px;margin:40px auto;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:32px}
+.auth-box h2{color:var(--accent);margin-bottom:20px;font-size:1.4rem;text-align:center}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:6px;font-weight:600}
+.form-group input,.form-group textarea{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.95rem;font-family:inherit;transition:border-color .2s}
+.form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,214,143,.1)}
+.form-group textarea{min-height:100px;resize:vertical}
+.auth-switch{text-align:center;margin-top:16px;font-size:.85rem;color:var(--muted)}
+.auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none;font-weight:600}
+.msg{padding:12px 16px;border-radius:10px;margin-top:12px;font-size:.85rem;display:none}
+.msg.error{display:block;background:rgba(248,81,73,.1);border:1px solid var(--danger);color:var(--danger)}
+.msg.success{display:block;background:rgba(0,214,143,.1);border:1px solid var(--accent);color:var(--accent)}
+
+/* Shop */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.cat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.cat-card h3{font-size:1rem;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.odds-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin-bottom:8px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid transparent;transition:all .2s}
+.odds-row:hover{background:rgba(0,214,143,.06);border-color:var(--accent)}
+.odds-row .label{font-weight:600;font-size:.9rem}
+.odds-row .price{color:var(--accent);font-weight:700;font-size:.9rem}
+.add-btn{background:var(--accent);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .2s}
+.add-btn:hover{transform:scale(1.05);box-shadow:0 2px 10px rgba(0,214,143,.3)}
+
+/* Cart */
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:14px;background:rgba(255,255,255,.03);border-radius:10px;margin-bottom:10px;border:1px solid var(--border)}
+.cart-item .info{flex:1}
+.cart-item .info .name{font-weight:600;font-size:.95rem}
+.cart-item .info .cat{font-size:.8rem;color:var(--muted)}
+.cart-item .price{color:var(--accent);font-weight:700}
+.cart-item .remove-btn{background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.2rem;padding:4px 8px}
+.cart-total{background:rgba(0,214,143,.08);border:1px solid var(--accent);border-radius:10px;padding:16px;margin:16px 0;text-align:right;font-size:1.1rem}
+.cart-total strong{color:var(--accent)}
+.empty-cart{text-align:center;padding:40px;color:var(--muted)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s;width:100%;margin-top:12px}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-d));color:#000}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,214,143,.3)}
+.btn-secondary{background:var(--card-h);color:var(--text);border:1px solid var(--border)}
+.btn-danger{background:rgba(248,81,73,.15);color:var(--danger);border:1px solid var(--danger)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* Checkout */
+.checkout-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:28px;max-width:600px;margin:0 auto}
+.checkout-box h2{color:var(--accent);margin-bottom:16px}
+.pay-instruction{background:rgba(210,153,34,.1);border:1px solid var(--warn);border-radius:10px;padding:14px 18px;margin:16px 0;font-size:.9rem;line-height:1.7}
+.pay-instruction .phone{font-size:1.3rem;font-weight:800;color:var(--warn);letter-spacing:1px;display:block;margin:6px 0}
+.copy-btn{background:var(--warn);color:#000;border:none;border-radius:6px;padding:3px 10px;font-size:.75rem;cursor:pointer;font-weight:700;margin-left:8px}
+
+/* Waiting */
+.waiting{text-align:center;padding:50px 20px}
+.spinner-lg{display:inline-block;width:48px;height:48px;border:4px solid rgba(0,214,143,.2);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.waiting h3{color:var(--accent);margin-top:16px;font-size:1.2rem}
+.waiting p{color:var(--muted);font-size:.9rem;margin-top:8px}
+.waiting .timer{color:var(--warn);font-size:.85rem;margin-top:12px}
+
+/* Result */
+.result-page{text-align:center;padding:50px 20px;animation:slideUp .5s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.result-icon{font-size:4rem;margin-bottom:16px;animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+.result-page h2{font-size:1.6rem;color:var(--accent);margin-bottom:12px}
+.result-page p{color:var(--muted);font-size:1rem;margin-bottom:24px}
+.odds-display{background:linear-gradient(135deg,rgba(0,214,143,.15),rgba(96,165,250,.1));border:2px solid var(--accent);border-radius:var(--r);padding:32px;margin:24px auto;max-width:450px}
+.odds-display .odds-label{font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px}
+.odds-display .odds-value{font-size:2.5rem;font-weight:900;color:var(--accent);letter-spacing:-1px}
+.odds-display .odds-items{font-size:.9rem;color:var(--muted);margin-top:12px;text-align:left}
+footer{text-align:center;padding:24px;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);margin-top:40px}
+@media(max-width:600px){.cat-grid{grid-template-columns:1fr}header h1{font-size:1.2rem}.odds-display .odds-value{font-size:1.8rem}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ LegitOdds</h1>
+  <div class="hdr-actions">
+    <button class="hdr-btn cart-btn" id="cartBtn" onclick="showPage('cart')">🛒 Cart<span class="cart-badge" id="cartBadge" style="display:none">0</span></button>
+    <button class="hdr-btn" id="authBtn" onclick="handleAuthClick()">Login</button>
+  </div>
+</header>
+
+<main>
+  <!-- SHOP -->
+  <section id="shopPage" class="page active">
+    <div class="cat-grid">
+      <div class="cat-card">
+        <h3>🏆 1X2 Bets</h3>
+        <div class="odds-row"><div><div class="label">20 Odds</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 999</span><button class="add-btn" onclick="addToCart('1X2 Bets','20 Odds',999,'20')">+ Add</button></div></div>
+        <div class="odds-row"><div><div class="label">45 Odds</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 1,999</span><button class="add-btn" onclick="addToCart('1X2 Bets','45 Odds',1999,'45')">+ Add</button></div></div>
+        <div class="odds-row"><div><div class="label">65 Odds</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 2,999</span><button class="add-btn" onclick="addToCart('1X2 Bets','65 Odds',2999,'65')">+ Add</button></div></div>
+      </div>
+      <div class="cat-card">
+        <h3>⚽ Over / Under</h3>
+        <div class="odds-row"><div><div class="label">25 Odds</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 1,299</span><button class="add-btn" onclick="addToCart('Over/Under','25 Odds',1299,'25')">+ Add</button></div></div>
+        <div class="odds-row"><div><div class="label">50 Odds</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 2,399</span><button class="add-btn" onclick="addToCart('Over/Under','50 Odds',2399,'50')">+ Add</button></div></div>
+        <div class="odds-row"><div><div class="label">75 Odds</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 3,399</span><button class="add-btn" onclick="addToCart('Over/Under','75 Odds',3399,'75')">+ Add</button></div></div>
+      </div>
+      <div class="cat-card">
+        <h3>🔥 GG / NGG</h3>
+        <div class="odds-row"><div><div class="label">10 Odds</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 799</span><button class="add-btn" onclick="addToCart('GG/NGG','10 Odds',799,'10')">+ Add</button></div></div>
+        <div class="odds-row"><div><div class="label">23 Odds</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 1,099</span><button class="add-btn" onclick="addToCart('GG/NGG','23 Odds',1099,'23')">+ Add</button></div></div>
+      </div>
+      <div class="cat-card">
+        <h3>🐉 Monster Odds / Correct Score</h3>
+        <div class="odds-row"><div><div class="label">2 Games · 178.652</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 5,999</span><button class="add-btn" onclick="addToCart('Monster Odds','2 Games 178.652',5999,'178.652')">+ Add</button></div></div>
+        <div class="odds-row"><div><div class="label">3 Games · 379.22</div></div><div style="display:flex;align-items:center;gap:10px"><span class="price">KSh 6,999</span><button class="add-btn" onclick="addToCart('Monster Odds','3 Games 379.22',6999,'379.22')">+ Add</button></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REGISTER -->
+  <section id="registerPage" class="page">
+    <div class="auth-box">
+      <h2>📝 Create Account</h2>
+      <div class="form-group"><label>Phone Number</label><input type="tel" id="regPhone" placeholder="07XXXXXXXX" maxlength="13"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="regPass" placeholder="Min 6 characters"></div>
+      <div class="form-group"><label>Confirm Password</label><input type="password" id="regPass2" placeholder="Repeat password"></div>
+      <div id="regMsg" class="msg"></div>
+      <button class="btn btn-primary" onclick="register()">Create Account</button>
+      <div class="auth-switch">Already have an account? <a onclick="showPage('login')">Login</a></div>
+    </div>
+  </section>
+
+  <!-- LOGIN -->
+  <section id="loginPage" class="page">
+    <div class="auth-box">
+      <h2>🔐 Login</h2>
+      <div class="form-group"><label>Phone Number</label><input type="tel" id="loginPhone" placeholder="07XXXXXXXX" maxlength="13"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="loginPass" placeholder="Your password"></div>
+      <div id="loginMsg" class="msg"></div>
+      <button class="btn btn-primary" onclick="login()">Login</button>
+      <div class="auth-switch">Don't have an account? <a onclick="showPage('register')">Register</a></div>
+    </div>
+  </section>
+
+  <!-- CART -->
+  <section id="cartPage" class="page">
+    <h2 style="color:var(--accent);margin-bottom:20px">🛒 Your Cart</h2>
+    <div id="cartItems"></div>
+    <div class="cart-total" id="cartTotal" style="display:none"></div>
+    <button class="btn btn-primary" id="checkoutBtn" style="display:none" onclick="showPage('checkout')">Proceed to Checkout →</button>
+    <button class="btn btn-secondary" onclick="showPage('shop')">← Continue Shopping</button>
+  </section>
+
+  <!-- CHECKOUT -->
+  <section id="checkoutPage" class="page">
+    <div class="checkout-box">
+      <h2>💳 Checkout</h2>
+      <div id="checkoutSummary" style="margin-bottom:16px;font-size:.9rem"></div>
+      <div class="pay-instruction">
+        <strong>Step 1 — Make Payment</strong><br>
+        Send <strong id="payAmount"></strong> via <strong>M-Pesa</strong> or <strong>Airtel Money</strong>:
+        <span class="phone">0785 639 307</span>
+        <button class="copy-btn" onclick="copyPhone()">📋 Copy Number</button>
+      </div>
+      <div class="form-group">
+        <label>Step 2 — Paste the Full Confirmation Message</label>
+        <textarea id="paymentMsg" placeholder="Paste the entire M-Pesa/Airtel SMS here..."></textarea>
+      </div>
+      <div id="checkoutMsg" class="msg"></div>
+      <button class="btn btn-primary" id="submitBtn" onclick="submitOrder()">✅ Submit Order</button>
+      <button class="btn btn-secondary" onclick="showPage('cart')">← Back to Cart</button>
+    </div>
+  </section>
+
+  <!-- WAITING -->
+  <section id="waitingPage" class="page">
+    <div class="waiting">
+      <div class="spinner-lg" id="waitSpinner"></div>
+      <h3 id="waitTitle">Waiting for Verification...</h3>
+      <p id="waitText">Our team is verifying your payment.<br>Keep this page open — your odds will appear shortly.</p>
+      <div class="timer" id="waitTimer"></div>
+      <button class="btn btn-danger" id="cancelBtn" onclick="cancelOrder()" style="max-width:250px;margin:20px auto 0">✕ Cancel</button>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="resultPage" class="page">
+    <div class="result-page">
+      <div class="result-icon">🎉</div>
+      <h2>Your Odds Are Ready!</h2>
+      <p>Payment verified & confirmed. Here are your odds:</p>
+      <div class="odds-display">
+        <div class="odds-label">Your Odds</div>
+        <div class="odds-value" id="resultOdds">—</div>
+        <div class="odds-items" id="resultItems"></div>
+      </div>
+      <p style="font-size:.85rem">🍀 Good luck!</p>
+      <button class="btn btn-primary" onclick="resetToShop()" style="max-width:300px;margin:20px auto 0">🔄 Buy More Odds</button>
+    </div>
+  </section>
+</main>
+
+<footer>© 2026 LegitOdds · Trusted & Verified · M-Pesa / Airtel Money</footer>
+
+<script>
+const PHONE = "0785639307";
+let token = localStorage.getItem('token') || null;
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+let ws = null, wsClosed = false, retryCount = 0, waitInterval = null, waitTimeout = null;
+
+// ── Page Navigation ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(name + 'Page').classList.add('active');
+  if (name === 'cart') renderCart();
+  if (name === 'checkout') renderCheckout();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Auth ──
+function handleAuthClick() {
+  if (token) {
+    localStorage.removeItem('token');
+    token = null;
+    updateAuthUI();
+    showPage('shop');
+  } else {
+    showPage('login');
+  }
+}
+
+function updateAuthUI() {
+  const btn = document.getElementById('authBtn');
+  if (token) {
+    btn.textContent = 'Logout';
+  } else {
+    btn.textContent = 'Login';
+  }
+}
+
+async function register() {
+  const phone = document.getElementById('regPhone').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const pass2 = document.getElementById('regPass2').value;
+  const msgEl = document.getElementById('regMsg');
+
+  if (pass !== pass2) {
+    msgEl.className = 'msg error'; msgEl.textContent = 'Passwords do not match'; return;
+  }
+
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: pass })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    token = data.token;
+    localStorage.setItem('token', token);
+    updateAuthUI();
+    showPage('shop');
+  } catch (e) {
+    msgEl.className = 'msg error'; msgEl.textContent = e.message;
+  }
+}
+
+async function login() {
+  const phone = document.getElementById('loginPhone').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const msgEl = document.getElementById('loginMsg');
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, password: pass })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    token = data.token;
+    localStorage.setItem('token', token);
+    updateAuthUI();
+    showPage('shop');
+  } catch (e) {
+    msgEl.className = 'msg error'; msgEl.textContent = e.message;
+  }
+}
+
+// ── Cart ──
+function addToCart(category, label, price, odds) {
+  const item = { category, label, price, odds, id: Date.now() + Math.random() };
+  cart.push(item);
+  saveCart();
+  updateCartBadge();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(i => i.id !== id);
+  saveCart();
+  updateCartBadge();
+  renderCart();
+}
+
+function saveCart() { localStorage.setItem('cart', JSON.stringify(cart)); }
+function updateCartBadge() {
+  const badge = document.getElementById('cartBadge');
+  if (cart.length > 0) { badge.style.display = 'flex'; badge.textContent = cart.length; }
+  else badge.style.display = 'none';
+}
+
+function renderCart() {
+  const container = document.getElementById('cartItems');
+  const totalEl = document.getElementById('cartTotal');
+  const btn = document.getElementById('checkoutBtn');
+
+  if (cart.length === 0) {
+    container.innerHTML = '<div class="empty-cart">Your cart is empty.<br>Add some odds to get started!</div>';
+    totalEl.style.display = 'none';
+    btn.style.display = 'none';
+    return;
+  }
+
+  container.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <div class="info"><div class="name">${item.label}</div><div class="cat">${item.category}</div></div>
+      <span class="price">KSh ${item.price.toLocaleString()}</span>
+      <button class="remove-btn" onclick="removeFromCart(${item.id})">✕</button>
+    </div>
+  `).join('');
+
+  const total = cart.reduce((s, i) => s + i.price, 0);
+  totalEl.style.display = 'block';
+  totalEl.innerHTML = `Total: <strong>KSh ${total.toLocaleString()}</strong>`;
+  btn.style.display = 'block';
+}
+
+// ── Checkout ──
+function renderCheckout() {
+  const total = cart.reduce((s, i) => s + i.price, 0);
+  const itemsText = cart.map(i => `${i.label} (${i.category})`).join(', ');
+  document.getElementById('checkoutSummary').innerHTML =
+    `<strong>Items:</strong> ${itemsText}<br><strong>Total to pay:</strong> KSh ${total.toLocaleString()}`;
+  document.getElementById('payAmount').textContent = `KSh ${total.toLocaleString()}`;
+  document.getElementById('paymentMsg').value = '';
+  document.getElementById('checkoutMsg').className = 'msg';
+  document.getElementById('checkoutMsg').textContent = '';
+}
+
+async function submitOrder() {
+  const msg = document.getElementById('paymentMsg').value.trim();
+  const msgEl = document.getElementById('checkoutMsg');
+  const btn = document.getElementById('submitBtn');
+
+  if (!msg) { msgEl.className = 'msg error'; msgEl.textContent = 'Please paste the payment message'; return; }
+
+  const total = cart.reduce((s, i) => s + i.price, 0);
+  const amountMatch = msg.match(/(?:KSh|KES|Sh|Ksh)\s*([\d,]+(?:\.\d+)?)/i);
+  let paid = amountMatch ? parseInt(amountMatch[1].replace(/,/g, '')) : null;
+  if (!paid) { const b = msg.match(/\b(\d{3,6})\b/); if (b) paid = parseInt(b[1]); }
+
+  if (paid !== null && paid < total) {
+    msgEl.className = 'msg error';
+    msgEl.textContent = `Payment KSh ${paid.toLocaleString()} is less than KSh ${total.toLocaleString()}. Please top up and resubmit.`;
+    return;
+  }
+
+  if (!token) { showPage('login'); return; }
+
+  btn.disabled = true; btn.innerHTML = '⏳ Submitting...';
+
+  try {
+    const res = await fetch('/api/create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ items: cart, paymentMessage: msg })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    cart = [];
+    saveCart();
+    updateCartBadge();
+    connectWS(data.orderId);
+    startTimer();
+    showPage('waiting');
+  } catch (e) {
+    msgEl.className = 'msg error'; msgEl.textContent = e.message;
+    btn.disabled = false; btn.innerHTML = '✅ Submit Order';
+  }
+}
+
+// ── WebSocket ──
+function connectWS(orderId) {
+  if (wsClosed) return;
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws`);
+  ws.onopen = () => { if (!wsClosed) ws.send(JSON.stringify({ orderId })); };
+  ws.onmessage = (e) => {
+    if (wsClosed) return;
+    const d = JSON.parse(e.data);
+    if (d.type === 'result') { stopTimer(); showResult(d); wsClosed = true; ws.close(); }
+    else if (d.type === 'expired') { stopTimer(); showWaitError('Order expired. Try again.'); wsClosed = true; ws.close(); }
+  };
+  ws.onclose = () => {
+    if (wsClosed) return;
+    if (document.getElementById('waitingPage').classList.contains('active')) {
+      retryCount++;
+      if (retryCount >= 5) { stopTimer(); showWaitError('Connection lost. Refresh and try again.'); return; }
+      setTimeout(() => { if (!wsClosed) connectWS(orderId); }, 3000 * Math.pow(2, retryCount - 1));
+    }
+  };
+  ws.onerror = () => {};
+}
+
+function startTimer() {
+  const start = Date.now();
+  waitInterval = setInterval(() => {
+    const s = Math.floor((Date.now() - start) / 1000);
+    document.getElementById('waitTimer').textContent = `Elapsed: ${Math.floor(s/60)}m ${s%60}s`;
+  }, 1000);
+  waitTimeout = setTimeout(() => { stopTimer(); showWaitError('Timed out. Try again.'); }, 10 * 60 * 1000);
+}
+
+function stopTimer() {
+  if (waitInterval) { clearInterval(waitInterval); waitInterval = null; }
+  if (waitTimeout) { clearTimeout(waitTimeout); waitTimeout = null; }
+}
+
+function showWaitError(m) {
+  document.getElementById('waitSpinner').style.display = 'none';
+  document.getElementById('waitTitle').textContent = '⚠️ ' + m;
+  document.getElementById('waitText').textContent = '';
+  document.getElementById('cancelBtn').textContent = '← Back to Store';
+}
+
+function cancelOrder() {
+  wsClosed = true; stopTimer();
+  if (ws) { ws.close(); ws = null; }
+  resetToShop();
+}
+
+function showResult(d) {
+  document.getElementById('resultOdds').textContent = d.odds;
+  document.getElementById('resultItems').innerHTML =
+    d.items.map(i => `• ${i.label} (${i.category})`).join('<br>');
+  showPage('result');
+}
+
+function resetToShop() {
+  wsClosed = true; stopTimer();
+  if (ws) { ws.close(); ws = null; }
+  retryCount = 0;
+  document.getElementById('waitSpinner').style.display = '';
+  document.getElementById('waitTitle').textContent = 'Waiting for Verification...';
+  document.getElementById('waitText').innerHTML = 'Our team is verifying your payment.<br>Keep this page open — your odds will appear shortly.';
+  document.getElementById('waitTimer').textContent = '';
+  document.getElementById('cancelBtn').textContent = '✕ Cancel';
+  showPage('shop');
+}
+
+function copyPhone() {
+  navigator.clipboard.writeText(PHONE).then(() => {
+    const b = document.querySelector('.copy-btn');
+    b.textContent = '✓ Copied!';
+    setTimeout(() => b.textContent = '📋 Copy Number', 2000);
+  });
+}
+
+// ── Init ──
+updateAuthUI();
+updateCartBadge();
+</script>
+</body>
+</html>   
