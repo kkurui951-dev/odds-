@@ -1,14 +1,13 @@
 {
   "name": "legitodds",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "LegitOdds - Trusted Odds Store with Accounts & Cart",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "engines": {
-  "node": "22.x"
-}
+    "node": "22.x"
   },
   "dependencies": {
     "express": "^4.21.0",
