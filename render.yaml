@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: legitodds
+    name: zedicius-tips
     runtime: node
     plan: starter
     buildCommand: npm install --no-audit --no-fund
