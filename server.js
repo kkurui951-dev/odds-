@@ -6,9 +6,7 @@ const Database = require('better-sqlite3');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const fs = require('fs');
 
-// ── Config ──
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_CHAT_ID = parseInt(process.env.ADMIN_CHAT_ID, 10);
@@ -125,7 +123,6 @@ app.post('/api/create-order', authRequired, (req, res) => {
   const orderObj = { orderId, userId: req.userId, phone: req.phone, items, total, ws: null, createdAt: Date.now() };
   activeOrders.set(orderId, orderObj);
 
-  // ── Telegram message with INLINE BUTTON ──
   const itemsText = items.map(i => `  • ${i.label} (${i.category}) — KSh ${i.price}`).join('\n');
   const adminMsg =
     `🆕 NEW ORDER: ${orderId}\n` +
@@ -199,9 +196,7 @@ wss.on('connection', (ws) => {
 
 // ── Telegram Bot ──
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
-
-// Track which orders the admin is about to type odds for
-const awaitingOdds = new Map(); // chatId -> orderId
+const awaitingOdds = new Map();
 
 bot.on('callback_query', (query) => {
   if (query.from.id !== ADMIN_CHAT_ID) return;
@@ -217,9 +212,7 @@ bot.on('callback_query', (query) => {
     return;
   }
 
-  // Tell admin to type the odds
   awaitingOdds.set(ADMIN_CHAT_ID, orderId);
-
   bot.answerCallbackQuery(query.id, { text: '✅ Ready! Type the odds below.' });
   bot.sendMessage(ADMIN_CHAT_ID,
     `✍️ Type the odds for order ${orderId} and send it here.\n\n` +
@@ -233,7 +226,6 @@ bot.on('message', (msg) => {
 
   const text = (msg.text || '').trim();
 
-  // If admin is awaiting odds input
   if (awaitingOdds.has(ADMIN_CHAT_ID)) {
     const orderId = awaitingOdds.get(ADMIN_CHAT_ID);
     awaitingOdds.delete(ADMIN_CHAT_ID);
@@ -251,21 +243,13 @@ bot.on('message', (msg) => {
 
     const odds = text;
 
-    // Push to user's browser
     if (order.ws && order.ws.readyState === WebSocket.OPEN) {
-      order.ws.send(JSON.stringify({
-        type: 'result',
-        orderId,
-        odds,
-        items: order.items,
-        total: order.total
-      }));
+      order.ws.send(JSON.stringify({ type: 'result', orderId, odds, items: order.items, total: order.total }));
     } else {
       bot.sendMessage(ADMIN_CHAT_ID, `⚠️ Order ${orderId} — user's connection is lost. Odds: ${odds}`);
     }
 
-    // Update DB
-    db.prepare("UPDATE orders SET status = 'delivered', odds_delivered = ? WHERE id = (SELECT id FROM orders WHERE user_id = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 1)")
+    db.prepare("UPDATE orders SET status = 'delivered', odds_delivered = ? WHERE user_id = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 1")
       .run(odds, order.userId);
 
     bot.sendMessage(ADMIN_CHAT_ID,
@@ -278,7 +262,6 @@ bot.on('message', (msg) => {
     return;
   }
 
-  // Fallback: manual ORDERID ODDS format still works
   const parts = text.split(/\s+/);
   if (parts.length >= 2 && activeOrders.has(parts[0])) {
     const order = activeOrders.get(parts[0]);
